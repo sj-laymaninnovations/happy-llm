@@ -45,13 +45,13 @@
 | Chapter | Key Content | Status |
 | --- | --- | --- |
 | [Preface](./docs/README.md) | Project origin, background, and reader recommendations | ✅ |
-| [Chapter 1: NLP Basic Concepts](./docs/chapter1/Chapter 1 %20NLP Basic Concept.md) | What is NLP, development history, task classification, text representation evolution | ✅ |
-| [Chapter 2: Transformer Architecture](./docs/chapter2/Chapter 2%20Transformer architecture.md) | Attention mechanism, Encoder-Decoder, hands-on Transformer building | ✅ |
-| [Chapter 3: Pre-trained Language Models](./docs/chapter3/Chapter 3%20 Pre-trained Language Model.md) | Comparison of Encoder-only, Encoder-Decoder, Decoder-Only models | ✅ |
-| [Chapter 4: Large Language Models](./docs/chapter4/Chapter 4%20 language models.md) | LLM definition, training strategies, emergent ability analysis | ✅ |
-| [Chapter 5: Building Large Models from Scratch](./docs/chapter5/Chapter 5%20 Hands-only build a big model.md) | Implementing LLaMA2, training Tokenizer, pre-training small LLM | ✅ |
-| [Chapter 6: Large Model Training Practice](./docs/chapter6/Chapter 6%20 Big Model Training Process Practice.md) | Pre-training, supervised fine-tuning, LoRA/QLoRA efficient fine-tuning | 🚧 |
-| [Chapter 7: Large Model Applications](./docs/chapter7/Chapter 7%20 big model application.md) | Model evaluation, RAG retrieval enhancement, Agent intelligent agents | ✅ |
+| [Chapter 1: NLP Basic Concepts](./docs/chapter1/Chapter 1  NLP Basic Concept.md) | What is NLP, development history, task classification, text representation evolution | ✅ |
+| [Chapter 2: Transformer Architecture](./docs/chapter2/Chapter 2 Transformer architecture.md) | Attention mechanism, Encoder-Decoder, hands-on Transformer building | ✅ |
+| [Chapter 3: Pre-trained Language Models](./docs/chapter3/Chapter 3  Pre-trained Language Model.md) | Comparison of Encoder-only, Encoder-Decoder, Decoder-Only models | ✅ |
+| [Chapter 4: Large Language Models](./docs/chapter4/Chapter 4  language models.md) | LLM definition, training strategies, emergent ability analysis | ✅ |
+| [Chapter 5: Building Large Models from Scratch](./docs/chapter5/Chapter 5  Hands-only build a big model.md) | Implementing LLaMA2, training Tokenizer, pre-training small LLM | ✅ |
+| [Chapter 6: Large Model Training Practice](./docs/chapter6/Chapter 6  Big Model Training Process Practice.md) | Pre-training, supervised fine-tuning, LoRA/QLoRA efficient fine-tuning | 🚧 |
+| [Chapter 7: Large Model Applications](./docs/chapter7/Chapter 7  big model application.md) | Model evaluation, RAG retrieval enhancement, Agent intelligent agents | ✅ |
 
 ### Model Downloads
 
