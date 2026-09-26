@@ -43,16 +43,16 @@ Chinese Word Segmentation (CWS) is a fundamental task in the NLP field. When pro
 ```
 English Input: The cat sits on the mat.
 English Segmentation Output: [The | cat | sits | on | the | mat]
-Chinese Input: 今天天气真好，适合出去游玩.
-Chinese Segmentation Output: ["今天", "天气", "真", "好", "，", "适合", "出去", "游玩", "。"]
+Chinese Input: 今天天气真好，适合出去游玩. ("The weather is really nice today, perfect for going out.")
+Chinese Segmentation Output: ["今天", "天气", "真", "好", "，", "适合", "出去", "游玩", "。"] (today | weather | really | nice | , | suitable for | go out | sightseeing | .)
 ```
 
 Accurate segmentation results are crucial for subsequent tasks such as part-of-speech tagging, entity recognition, and syntactic analysis. If segmentation is inaccurate, it will directly affect the effectiveness of the entire text processing workflow.
 
 ```
-Input: 雍和宫的荷花开的很好。
+Input: 雍和宫的荷花开的很好。 ("The lotus flowers at the Yonghe Temple are blooming beautifully.")
 
-Correct Segmentation: 雍和宫 | 的 | 荷花 | 开 | 的 | 很 | 好 | 。
+Correct Segmentation: 雍和宫 | 的 | 荷花 | 开 | 的 | 很 | 好 | 。 (Yonghe Temple | 's | lotus flowers | bloom | [particle] | very | well | .)
 Error Segmentation 1: 雍 | 和 | 宫的 | 荷花 | 开的 | 很好 | 。 (Place name broken apart)
 Error Segmentation 2: 雍和 | 宫 | 的荷 | 花开 | 的很 | 好。 (Word boundaries confused)
 ```
@@ -175,7 +175,7 @@ Machine Translation (MT) is a core task in the NLP field, referring to the proce
 Suppose we have a Chinese sentence: “The weather is very good today.” and we want to translate it into English.
 
 ```
-Source Language: 今天天气很好。
+Source Language: 今天天气很好。 ("The weather is very good today.")
 
 Target Language: The weather is very nice today.
 ```
@@ -200,7 +200,7 @@ The development history of text representation has gone through multiple stages,
 
 ### 1.4.1 Word Vectors
 
-The Vector Space Model (VSM) is a foundational and powerful text representation method in the NLP field, first proposed by Salton at Harvard University. The vector space model achieves mathematical representation of text by converting text (including words, sentences, paragraphs, or entire documents) into vectors in a high-dimensional space. In this model, each dimension represents a feature item (e.g., character, word, phrase, or phrase), and each element value in the vector represents the weight of that feature item in the text. This weight is determined through specific calculation formulas (such as Term Frequency TF, Term Frequency-Inverse Document Frequency TF-IDF, etc.), reflecting the importance of the feature item in the text.
+The Vector Space Model (VSM) is a foundational and powerful text representation method in the NLP field, first proposed by Salton at Harvard University. The vector space model achieves mathematical representation of text by converting text (including words, sentences, paragraphs, or entire documents) into vectors in a high-dimensional space. In this model, each dimension represents a feature item (e.g., character, word, word group, or phrase), and each element value in the vector represents the weight of that feature item in the text. This weight is determined through specific calculation formulas (such as Term Frequency TF, Term Frequency-Inverse Document Frequency TF-IDF, etc.), reflecting the importance of the feature item in the text.
 
 The vector space model has extremely wide applications, including but not limited to text similarity calculation, text classification, information retrieval, and other natural language processing tasks. It transforms complex text data into a mathematical form that is easy to compute and analyze, making text similarity calculations and pattern recognition possible. Additionally, through matrix operations such as eigenvalue calculations and singular value decomposition (SVD), text vector representations can be optimized, further improving processing efficiency and effectiveness.
 
@@ -209,8 +209,8 @@ However, the vector space model also has many problems. The most prominent are d
 VSM method word vector:
 
 ```python
-# "雍和宫的荷花很美"
-# Vocabulary size: 16384, sentence contains words: ["雍和宫", "的", "荷花", "很", "美"] = 5 words
+# "雍和宫的荷花很美" ("The lotus flowers at the Yonghe Temple are beautiful")
+# Vocabulary size: 16384, sentence contains words: ["雍和宫", "的", "荷花", "很", "美"] = 5 words (Yonghe Temple, 's, lotus flowers, very, beautiful)
 
 vector = [0, 0, ..., 1, 0, ..., 1, 0, ..., 1, 0, ..., 1, 0, ..., 1, 0, ...]
 #                    ↑          ↑          ↑          ↑          ↑
@@ -224,9 +224,9 @@ To solve these problems, researchers' research on the vector space model mainly 
 
 ### 1.4.2 Language Models
 
-The N-gram model is a statistical-based language model in the NLP field, widely used in numerous tasks such as speech recognition, handwriting recognition, spelling correction, machine translation, and search engines. The core idea of the N-gram model is based on the Markov assumption, that the probability of a word appearing depends only on the previous N-1 words. Here, N represents the number of consecutive words and can be any positive integer. For example, when N=1, the model is called unigram, considering only the probability of a single word; when N=2, it is called bigram, considering the previous word to estimate the probability of the current word; when N=3, it is called trigram, considering the previous words to estimate the probability of the third word, and so on for N-gram.
+The N-gram model is a statistical-based language model in the NLP field, widely used in numerous tasks such as speech recognition, handwriting recognition, spelling correction, machine translation, and search engines. The core idea of the N-gram model is based on the Markov assumption, that the probability of a word appearing depends only on the previous N-1 words. Here, N represents the number of consecutive words and can be any positive integer. For example, when N=1, the model is called unigram, considering only the probability of a single word; when N=2, it is called bigram, considering the previous word to estimate the probability of the current word; when N=3, it is called trigram, considering the previous two words to estimate the probability of the third word, and so on for N-gram.
 
-The N-gram model estimates the probability of the entire sentence through conditional probability chain rule. Specifically, for a given sentence, the model calculates the conditional probability of each N-gram occurrence and multiplies these probabilities to get the probability of the entire sentence. For example, for the sentence “The quick brown fox”, as a trigram model, we would calculate P("brown" | "The", "quick"), P("fox" | "quick", "brown"), etc., and multiply them.
+The N-gram model estimates the probability of the entire sentence through conditional probability chain rule. Specifically, for a given sentence, the model calculates the conditional probability of each N-gram occurrence and multiplies these probabilities to get the probability of the entire sentence. For example, for the sentence “The quick brown fox”, as a trigram model, we would calculate $P("brown" | "The", "quick")$, $P("fox" | "quick", "brown")$, etc., and multiply them.
 
 The advantages of N-gram are simplicity and ease of understanding, and it performs well in many tasks. However, when N is large, data sparsity issues arise. The model's parameter space increases dramatically, and the probability of the same N-gram sequences appearing becomes very low, leading to ineffective learning and reduced model generalization ability. Additionally, the N-gram model ignores long-range dependencies between words, failing to capture complex structures and semantic information in sentences.
 
@@ -242,7 +242,7 @@ Compared to traditional high-dimensional sparse representations (such as One-Hot
 
 ### 1.4.4 ELMo
 
-ELMo (Embeddings from Language Models) achieves a breakthrough transition from polysemy, static word vectors to dynamic word vectors. First, it trains a language model on a large corpus to obtain a word vector model, then fine-tunes the model on specific tasks to get word vectors more suitable for that task. ELMo first introduces pre-training ideas into word vector generation, using a bidirectional LSTM structure to capture contextual information of words, generating more rich and accurate word vector representations.
+ELMo (Embeddings from Language Models) achieves a leap forward: it handles polysemy (one word with multiple meanings) and moves from static word vectors to dynamic, context-dependent word vectors. First, it trains a language model on a large corpus to obtain a word vector model, then fine-tunes the model on specific tasks to get word vectors more suitable for that task. ELMo first introduces pre-training ideas into word vector generation, using a bidirectional LSTM structure to capture contextual information of words, generating more rich and accurate word vector representations.
 
 ELMo adopts a typical two-stage process: the first stage is pre-training using language models; the second stage is extracting the corresponding word vectors from the pre-trained network as new features to supplement downstream tasks. The LSTM-based RNN model has long training times, and feature extraction is key to optimizing the ELMo model.
 

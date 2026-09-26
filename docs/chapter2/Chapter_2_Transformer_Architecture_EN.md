@@ -13,21 +13,21 @@ As NLP moves from statistical machine learning to deep learning, text representa
   <p>Figure 2.1 Feedforward neural network</p>
 </div>
 
-- Convolutional Neural Network (CNN), that is, the convolutional layer with a training parameter much smaller than that of the feedforward neural network to perform feature extraction and learning, as shown in Figure 2.2:
+- Convolutional Neural Network (CNN), which uses convolutional layers, with far fewer trainable parameters than a feedforward neural network, to perform feature extraction and learning, as shown in Figure 2.2:
 
 <div align="center">
   <img src="https://raw.githubusercontent.com/datawhalechina/happy-llm/main/docs/images/2-figures/1-1.png" alt="Image Description" width="90%"/>
   <p>Figure 2.2 Convolutional Neural Network</p>
 </div>
 
-- Recurrent Neural Network (RNN), a network that can use historical information as input, including rings and self-repeaters, as shown in Figure 2.3:
+- Recurrent Neural Network (RNN), a network that can use historical information as input, containing loops and self-recurrent connections, as shown in Figure 2.3:
 
 <div align="center">
   <img src="https://raw.githubusercontent.com/datawhalechina/happy-llm/main/docs/images/2-figures/1-2.png" alt="Image Description" width="90%"/>
   <p>Figure 2.3 Recurrent Neural Network</p>
 </div>
 
-Since the text that NLP tasks need to process is often sequences, RNNs dedicated to processing sequence and time-series data can often achieve optimal results on NLP tasks. In fact, before the attention mechanism emerged, RNN and RNN's derivative architecture LSTM were well-deserved overlords in the NLP field. For example, the text representation model ELMo, which we talked about in Chapter 1, created the pre-training idea, uses two-way LSTM as the network architecture.
+Since the text that NLP tasks need to process is often sequences, RNNs dedicated to processing sequence and time-series data can often achieve optimal results on NLP tasks. In fact, before the attention mechanism emerged, RNN and RNN's derivative architecture LSTM were well-deserved overlords in the NLP field. For example, the text representation model ELMo, which we talked about in Chapter 1, created the pre-training idea, uses a bidirectional LSTM as the network architecture.
 
 However, although RNN and LSTM have the advantages of capturing timing information and suitable for sequence generation, they have two irreparable shortcomings:
 
@@ -43,11 +43,11 @@ The attention mechanism first originated from the field of computer vision. Its 
 
 There are three core variables in the attention mechanism: **Query**, **Key**, and **Value**. We can understand the meaning of each variable through a case. For example, when we have a news report and we want to find the time of this report, then our Query can be a vector similar to "time" and "date" (for easy understanding, text is used here to represent it, but it is actually a dense vector), and Key and Value will be the entire text. By operating on Query and Key, we can get a weight, which actually reflects the relative amount of attention that should be distributed on each token in the text starting from Query. By computing the weight and Value, the final result is to calculate the entire text attention from Query.
 
-​Specifically, the attention mechanism is characterized by calculating the correlation between **Query** and **Key** to the truth value weighted sum, thereby fitting the correlation between each word in the sequence and other words.
+​Specifically, the attention mechanism is characterized by calculating the correlation between **Query** and **Key** and using it to take a weighted sum of the **Value**s, thereby fitting the correlation between each word in the sequence and other words.
 
 ### 2.1.2 Understand the attention mechanism
 
-We just mentioned that the attention mechanism has three core variables: query value, key value, and truth value. Next, we take the dictionary as an example to gradually analyze how the calculation formula of the attention mechanism is obtained, so as to help readers understand the attention mechanism in depth. First, we have a dictionary like this:
+We just mentioned that the attention mechanism has three core variables: Query, Key, and Value. Next, we take the dictionary as an example to gradually analyze how the calculation formula of the attention mechanism is obtained, so as to help readers understand the attention mechanism in depth. First, we have a dictionary like this:
 
 ```json
 {
@@ -57,7 +57,7 @@ We just mentioned that the attention mechanism has three core variables: query v
 }
 ```
 
-At this time, the key of the dictionary is the key value Key in the attention mechanism, and the value of the dictionary is the true value Value. The dictionary supports us to perform exact string matching. For example, if the value we want to find is that the query value Query is "apple", then we can directly get the corresponding value by matching Query with Key.
+At this time, the key of the dictionary is the Key in the attention mechanism, and the value of the dictionary is the Value. The dictionary supports us to perform exact string matching. For example, if the value we want to find is that the query value Query is "apple", then we can directly get the corresponding value by matching Query with Key.
 
 But what if we want the matching Query to be a concept that contains multiple keys? For example, we want to find "fruit", at this point, we should match both apple and banana, but not chair. Therefore, we often choose to combine the value corresponding to the Key to get the final value.
 
@@ -79,7 +79,7 @@ $$
 
 The different weights given to different keys are what we call attention scores, which means how much attention we should give to each key in order to query Query. But how to calculate the corresponding attention score for each query? Intuitively, we can think that the higher the correlation between Key and Query, the greater the attention weight it should be given. But how can we find a reasonable way to calculate the correct attention score?
 
-In Chapter 1, we mention the concept of word vectors. Through reasonable training fitting, word vectors can represent semantic information, so that words with similar semantics are closer in vector space, and words with more semantics are farther away in vector space. We often use the European distance to measure the similarity of word vectors, but we can also use dot product to measure:
+In Chapter 1, we mention the concept of word vectors. Through reasonable training fitting, word vectors can represent semantic information, so that words with similar semantics are closer in vector space, and words with dissimilar semantics are farther away in vector space. We often use the Euclidean distance to measure the similarity of word vectors, but we can also use dot product to measure:
 
 $$
 v·w = \sum_{i}v_iw_i
@@ -93,7 +93,7 @@ $$
 x = qK^T
 $$
 
-Here, K is a matrix formed by stacking word vectors corresponding to all Keys. Based on the definition of matrix multiplication, x is the dot product of q and each k value. Now that we get x reflects the similarity between Query and each Key, we convert it into a sum of weights with 1 through a Softmax layer:
+Here, K is a matrix formed by stacking word vectors corresponding to all Keys. Based on the definition of matrix multiplication, x is the dot product of q and each k value. Now that we get x reflects the similarity between Query and each Key, we convert it through a Softmax layer into weights that sum to 1:
 
 $$
 \text{softmax}(x)_i = \frac{e^{xi}}{\sum_{j}e^{x_j}}
@@ -124,25 +124,25 @@ This is the core calculation formula of the attention mechanism.
 Based on the above, we can simply use Pytorch to implement the code of attention mechanism:
 
 ```python
-'''注意力计算函数'''
+'''Attention computation function'''
 def attention(query, key, value, dropout=None):
     '''
     args:
-    query: 查询值矩阵
-    key: 键值矩阵
-    value: 真值矩阵
+    query: query matrix
+    key: key matrix
+    value: value matrix
     '''
-    # 获取键向量的维度，键向量的维度和值向量的维度相同
+    # Get the dimension of the key vectors (same as the dimension of the value vectors)
     d_k = query.size(-1) 
-    # 计算Q与K的内积并除以根号dk
-    # transpose——相当于转置
+    # Compute the dot product of Q and K, divided by sqrt(d_k)
+    # transpose: swaps the last two dimensions
     scores = torch.matmul(query, key.transpose(-2, -1)) / math.sqrt(d_k)
     # Softmax
     p_attn = scores.softmax(dim=-1)
     if dropout is not None:
         p_attn = dropout(p_attn)
-        # 采样
-     # 根据计算结果对value进行加权求和
+        # sampling (dropout)
+     # Compute the weighted sum of value using the attention weights
     return torch.matmul(p_attn, value), p_attn
 
 ```
@@ -153,40 +153,40 @@ Note that in the above code, we assume that the input q, k, and v are transforme
 
 Based on the above analysis, we can find that the essence of the attention mechanism is to calculate the similarity of the elements of two sequences in sequence, find out the correlation between each element of one sequence and each element of another sequence, and then weight it based on the correlation, that is, allocate attention. These two sequences are the source of Q, K, and V in our calculation process.
 
-However, in our practical applications, we often only need to calculate the attention result between Query and Key, and there is rarely an additional truth value. That is to say, we only need to fit two text sequences. ​In the classical attention mechanism, Q often comes from one sequence, and K and V come from another sequence, and are both calculated through parameter matrix, so that the relationship between these two sequences can be fitted. For example, in the Decoder structure of Transformer, Q comes from the input of Decoder, and K and V come from the output of Encoder, thus fitting the relationship between encoded information and historical information, making it easier to synthesize these two information to achieve future predictions.
+However, in our practical applications, we often only need to calculate the attention result between Query and Key, and there is rarely a separate Value. That is to say, we only need to fit two text sequences. ​In the classical attention mechanism, Q often comes from one sequence, and K and V come from another sequence, and are both calculated through parameter matrix, so that the relationship between these two sequences can be fitted. For example, in the Decoder structure of Transformer, Q comes from the input of Decoder, and K and V come from the output of Encoder, thus fitting the relationship between encoded information and historical information, making it easier to synthesize these two information to achieve future predictions.
 
-​But in the Encoder structure of Transformer, a variant of the attention mechanism is used - self-attention (self-attention) mechanism. The so-called self-attention means calculating the attention distribution of each element in the sequence to other elements. That is, during the calculation process, Q, K, and V are all calculated from the same input through different parameter matrices. In Encoder, Q, K, and V are the input product to the parameter matrix $W_q, W_k, and W_v$, respectively, to fit the relationship between each token in the input statement to all other tokens.
+​But in the Encoder structure of Transformer, a variant of the attention mechanism is used - self-attention (self-attention) mechanism. The so-called self-attention means calculating the attention distribution of each element in the sequence to other elements. That is, during the calculation process, Q, K, and V are all calculated from the same input through different parameter matrices. In Encoder, Q, K, and V are obtained by multiplying the input by the parameter matrices $W_q$, $W_k$, and $W_v$, respectively, to fit the relationship between each token in the input statement to all other tokens.
 
 Through the self-attention mechanism, we can find the correlation size of each token in a text and all other tokens, thereby modeling the dependencies between texts. In the implementation in the code, the self-attention mechanism is actually implemented by passing the same parameter to the inputs of Q, K, and V:
 
 ```python
-# attention 为上文定义的注意力计算函数
+# attention is the attention function defined above
 attention(x, x, x)
 ```
 
-### 2.1.5 Mask self-attention
+### 2.1.5 Masked Self-Attention
 
-Mask self-attention, i.e. Mask Self-Attention, refers to the self-attention mechanism using attention masks. The function of the mask is to block some tokens at specific locations. During the learning process of the model, the masked tokens will be ignored.
+Masked self-attention (Masked Self-Attention) refers to the self-attention mechanism using attention masks. The function of the mask is to block some tokens at specific locations. During the learning process of the model, the masked tokens will be ignored.
 
 The core motivation for using attention masks is to allow models to use historical information to predict and not see future information. The Transformer model using attention mechanism is also learned through language model tasks similar to n-gram, that is, for a text sequence, it constantly predicts the next token based on the previous token until the entire text sequence is completed.
 
 For example, if the text sequence to be learned is [BOS] I like you [EOS], then the model will predict and learn in the following order:
 
-    Step 1: Input 【BOS】, output I
-    Step 2: Input 【BOS】I, output like
-    Step 3: Input 【BOS】I like, output you
+    Step 1: Input [BOS], output I
+    Step 2: Input [BOS] I, output like
+    Step 3: Input [BOS] I like, output you
     Step 4: Input [BOS] I like you, output [EOS]
 
 Theoretically, as long as there are enough corpus to learn, through the above process, the model can learn any text sequence modeling method, that is, it can complete any text.
 
 However, we can find that the above process is a serial process, that is, you need to complete Step 1 first before you can do Step 2, and then gradually complete the completion of the entire sequence. We said at the beginning that one of the core advantages of Transformer over RNN is that it can compute in parallel and has higher computing efficiency. If the model needs to complete the above process in serial to complete the learning for each training corpus, then it is obvious that parallel computing is not achieved and the computing efficiency is very low.
 
-To address this problem, Transformer proposed a method of masking self-attention. Mask self-attention generates a string of masks to obscure future information. For example, the text sequence we want to learn is still [BOS] I like you [EOS], the attention mask we use is [MASK], so the input of the model is:
+To address this problem, Transformer proposed masked self-attention. Masked self-attention generates a string of masks to obscure future information. For example, the text sequence we want to learn is still [BOS] I like you [EOS], the attention mask we use is [MASK], so the input of the model is:
 
-    <BOS> 【MASK】【MASK】【MASK】【MASK】
-    <BOS>    I   【MASK】 【MASK】【MASK】
-    <BOS>    I     like  【MASK】【MASK】
-    <BOS>    I     like    you  【MASK】
+    <BOS> [MASK] [MASK] [MASK] [MASK]
+    <BOS>    I   [MASK] [MASK] [MASK]
+    <BOS>    I     like  [MASK] [MASK]
+    <BOS>    I     like    you  [MASK]
     <BoS>    I     like    you   </EOS>
 
 In each row of input, the model still sees only the previous token and predicts the next token. However, note that the above input is no longer a serial process, but can be input into the model in parallel. The model only needs each sample to predict the next token based on the unblocked token, thereby implementing a parallel language model.
@@ -196,10 +196,10 @@ Observing the above mask, we can find that it is actually an upper triangle matr
 In the specific implementation, we generate the Mask matrix through the following code:
 
 ```python
-# 创建一个上三角矩阵，用于遮蔽未来信息。
-# 先通过 full 函数创建一个 1 * seq_len * seq_len 的矩阵
+# Create an upper triangular matrix used to mask future information.
+# First use full to create a 1 * seq_len * seq_len matrix
 mask = torch.full((1, args.max_seq_len, args.max_seq_len), float("-inf"))
-# triu 函数的功能是创建一个上三角矩阵
+# triu returns the upper triangular part of a matrix
 mask = torch.triu(mask, diagonal=1)
 ```
 
@@ -208,14 +208,14 @@ The generated Mask matrix will be an upper triangle matrix, all elements at the 
 When calculating attention, we will sum the calculated attention score with this mask, and then perform the Softmax operation:
 
 ```python
-# 此处的 scores 为计算得到的注意力分数，mask 为上文生成的掩码矩阵
+# Here scores are the computed attention scores and mask is the mask matrix generated above
 scores = scores + mask[:, :seqlen, :seqlen]
 scores = F.softmax(scores.float(), dim=-1).type_as(xq)
 ```
 
 By summing, the attention score results of the upper triangle area (that is, the position corresponding to the token that should be obscured) become `-inf`, while the scores of the lower triangle area remain unchanged. If you do the Softmax operation, the value of `-inf` will be set to 0 after passing through Softmax, thus ignoring the attention score calculated in the upper triangle area, thus achieving attention obscurity.
 
-### 2.1.6 Bucks’ Attention
+### 2.1.6 Multi-Head Attention
 
 The attention mechanism can achieve parallelization and long-term dependency fit, but one attention calculation can only fit one correlation, and it is difficult for a single attention mechanism to fully fit the correlation in the sentence sequence. Therefore, Transformer uses a multi-head attention mechanism, which is to perform multiple attention calculations on a corpus at the same time. Each attention calculation can fit different relationships. Splicing the last multiple results as the final output, so that language information can be more comprehensive and in-depth.
 
@@ -223,7 +223,7 @@ In the original paper, the author also verified through experiments that in the 
 
 <div align="center">
   <img src="https://raw.githubusercontent.com/datawhalechina/happy-llm/main/docs/images/2-figures/1-3.jpeg" alt="Image Description" width="90%"/>
-  <p>Figure 2.4 Broad attention mechanism</p>
+  <p>Figure 2.4 Multi-head attention mechanism</p>
 </div>
 
 ​The upper and lower layers are the results of two attention heads performing self-attention calculations on the same sentence sequence. It can be seen that for different attention heads, they can fit relevant information at different levels. By simultaneous calculation of multiple attention heads, the statement relationship can be more comprehensively fitted.
@@ -238,61 +238,61 @@ $$
 
 The most intuitive code implementation is not complicated, that is, n heads have 3 parameter matrices of n groups. Each group performs the same attention calculation, but because it is a different parameter matrix, different attention results are achieved through back propagation, and then the n results are spliced together and output.
 
-However, the above implementations have high spatial and temporal complexity. We can cleverly implement parallel multi-head calculations through matrix operations. The core logic is to use three combination matrices to replace the combination of n parameter matrices, that is, the matrix internal product and re-split are actually equivalent to the splicing matrix and re-inner product. For specific implementation, please refer to the following code:
+However, the above implementations have high spatial and temporal complexity. We can cleverly implement parallel multi-head calculations through matrix operations. The core logic is to use three combination matrices to replace the combination of n parameter matrices, that is, multiplying by each matrix and then concatenating the results is equivalent to concatenating the matrices and then multiplying. For specific implementation, please refer to the following code:
 
 ```python
 import torch.nn as nn
 import torch
 
-'''多头自注意力计算模块'''
+'''Multi-head self-attention module'''
 class MultiHeadAttention(nn.Module):
 
     def __init__(self, args: ModelArgs, is_causal=False):
-        # 构造函数
-        # args: 配置对象
+        # Constructor
+        # args: config object
         super().__init__()
-        # 隐藏层维度必须是头数的整数倍，因为后面我们会将输入拆成头数个矩阵
+        # The hidden dimension must be a multiple of the number of heads, because we will split the input into n_heads matrices
         assert args.dim % args.n_heads == 0
-        # 模型并行处理大小，默认为1。
+        # Model-parallel size, 1 by default.
         model_parallel_size = 1
-        # 本地计算头数，等于总头数除以模型并行处理大小。
+        # Number of heads computed locally = total heads / model-parallel size.
         self.n_local_heads = args.n_heads // model_parallel_size
-        # 每个头的维度，等于模型维度除以头的总数。
+        # Dimension of each head = model dimension / total number of heads.
         self.head_dim = args.dim // args.n_heads
 
-        # Wq, Wk, Wv 参数矩阵，每个参数矩阵为 n_embd x n_embd
-        # 这里通过三个组合矩阵来代替了n个参数矩阵的组合，其逻辑在于矩阵内积再拼接其实等同于拼接矩阵再内积，
-        # 不理解的读者可以自行模拟一下，每一个线性层其实相当于n个参数矩阵的拼接
+        # Wq, Wk, Wv parameter matrices, each of size n_embd x n_embd
+        # Here three combined matrices replace n separate sets of parameter matrices; multiplying and then concatenating is equivalent to concatenating the matrices and then multiplying.
+        # If this is unclear, try it out yourself: each linear layer is effectively n parameter matrices concatenated together
         self.wq = nn.Linear(args.dim, args.n_heads * self.head_dim, bias=False)
         self.wk = nn.Linear(args.dim, args.n_heads * self.head_dim, bias=False)
         self.wv = nn.Linear(args.dim, args.n_heads * self.head_dim, bias=False)
-        # 输出权重矩阵，维度为 dim x n_embd（head_dim = n_embeds / n_heads）
+        # Output weight matrix of size dim x n_embd (head_dim = n_embeds / n_heads)
         self.wo = nn.Linear(args.n_heads * self.head_dim, args.dim, bias=False)
-        # 注意力的 dropout
+        # Attention dropout
         self.attn_dropout = nn.Dropout(args.dropout)
-        # 残差连接的 dropout
+        # Residual-connection dropout
         self.resid_dropout = nn.Dropout(args.dropout)
          
-        # 创建一个上三角矩阵，用于遮蔽未来信息
-        # 注意，因为是多头注意力，Mask 矩阵比之前我们定义的多一个维度
+        # Create an upper triangular matrix to mask future information
+        # Note: because this is multi-head attention, the mask has one more dimension than the one defined earlier
         if is_causal:
            mask = torch.full((1, 1, args.max_seq_len, args.max_seq_len), float("-inf"))
            mask = torch.triu(mask, diagonal=1)
-           # 注册为模型的缓冲区
+           # Register it as a buffer of the model
            self.register_buffer("mask", mask)
 
     def forward(self, q: torch.Tensor, k: torch.Tensor, v: torch.Tensor):
 
-        # 获取批次大小和序列长度，[batch_size, seq_len, dim]
+        # Get batch size and sequence length, [batch_size, seq_len, dim]
         bsz, seqlen, _ = q.shape
 
-        # 计算查询（Q）、键（K）、值（V）,输入通过参数矩阵层，维度为 (B, T, n_embed) x (n_embed, n_embed) -> (B, T, n_embed)
+        # Compute query (Q), key (K) and value (V) by passing the inputs through the parameter matrices, shape (B, T, n_embed) x (n_embed, n_embed) -> (B, T, n_embed)
         xq, xk, xv = self.wq(q), self.wk(k), self.wv(v)
 
-        # 将 Q、K、V 拆分成多头，维度为 (B, T, n_head, C // n_head)，然后交换维度，变成 (B, n_head, T, C // n_head)
-        # 因为在注意力计算中我们是取了后两个维度参与计算
-        # 为什么要先按B*T*n_head*C//n_head展开再互换1、2维度而不是直接按注意力输入展开，是因为view的展开方式是直接把输入全部排开，
-        # 然后按要求构造，可以发现只有上述操作能够实现我们将每个头对应部分取出来的目标
+        # Split Q, K, V into heads, shape (B, T, n_head, C // n_head), then swap dimensions to get (B, n_head, T, C // n_head)
+        # because the attention computation operates on the last two dimensions
+        # Why view as B*T*n_head*C//n_head and then swap dims 1 and 2, instead of viewing directly in the attention input shape? Because view lays out all the input elements flat
+        # and then reshapes them as requested; only the operation above correctly extracts the part belonging to each head
         xq = xq.view(bsz, seqlen, self.n_local_heads, self.head_dim)
         xk = xk.view(bsz, seqlen, self.n_local_heads, self.head_dim)
         xv = xv.view(bsz, seqlen, self.n_local_heads, self.head_dim)
@@ -301,28 +301,28 @@ class MultiHeadAttention(nn.Module):
         xv = xv.transpose(1, 2)
 
 
-        # 注意力计算
-        # 计算 QK^T / sqrt(d_k)，维度为 (B, nh, T, hs) x (B, nh, hs, T) -> (B, nh, T, T)
+        # Attention computation
+        # Compute QK^T / sqrt(d_k), shape (B, nh, T, hs) x (B, nh, hs, T) -> (B, nh, T, T)
         scores = torch.matmul(xq, xk.transpose(2, 3)) / math.sqrt(self.head_dim)
-        # 掩码自注意力必须有注意力掩码
+        # Masked self-attention requires an attention mask
         if self.is_causal:
             assert hasattr(self, 'mask')
-            # 这里截取到序列长度，因为有些序列可能比 max_seq_len 短
+            # Slice to the sequence length, since some sequences may be shorter than max_seq_len
             scores = scores + self.mask[:, :, :seqlen, :seqlen]
-        # 计算 softmax，维度为 (B, nh, T, T)
+        # Compute softmax, shape (B, nh, T, T)
         scores = F.softmax(scores.float(), dim=-1).type_as(xq)
-        # 做 Dropout
+        # Apply dropout
         scores = self.attn_dropout(scores)
-        # V * Score，维度为(B, nh, T, T) x (B, nh, T, hs) -> (B, nh, T, hs)
+        # V * Score, shape(B, nh, T, T) x (B, nh, T, hs) -> (B, nh, T, hs)
         output = torch.matmul(scores, xv)
 
-        # 恢复时间维度并合并头。
-        # 将多头的结果拼接起来, 先交换维度为 (B, T, n_head, C // n_head)，再拼接成 (B, T, n_head * C // n_head)
-        # contiguous 函数用于重新开辟一块新内存存储，因为Pytorch设置先transpose再view会报错，
-        # 因为view直接基于底层存储得到，然而transpose并不会改变底层存储，因此需要额外存储
+        # Restore the time dimension and merge the heads.
+        # Concatenate the heads' outputs: first swap dims to (B, T, n_head, C // n_head), then merge into (B, T, n_head * C // n_head)
+        # contiguous copies the tensor into a new block of memory, because in PyTorch calling view right after transpose raises an error:
+        # view works directly on the underlying storage, but transpose does not change that storage, so an extra copy is needed
         output = output.transpose(1, 2).contiguous().view(bsz, seqlen, -1)
 
-        # 最终投影回残差流。
+        # Finally, project back into the residual stream.
         output = self.wo(output)
         output = self.resid_dropout(output)
         return output
@@ -339,7 +339,7 @@ In this section, we analyze the Encoder-Decoder structure of Transformer based o
 
 Seq2Seq, i.e. sequence-to-sequence, is a classic NLP task. Specifically, it means that the model inputs a natural language sequence $input = (x_1, x_2, x_3...x_n)$ , and the output is a natural language sequence that may not be equal to each other $output = (y_1, y_2, y_3...y_m)$ . In fact, Seq2Seq is the most classic task in NLP, and almost all NLP tasks can be regarded as Seq2Seq tasks. For example, text classification tasks can be regarded as target sequences with output length 1 (such as $m$ = 1 in the above formula); part-of-speech annotation tasks can be regarded as target sequences with the same length as the output and the input sequence (such as $m$ = $n$ in the above formula).
 
-The machine translation task is a classic Seq2Seq task. For example, our input might be "The weather is so good today" and the output is "Today is a good day." Transformer is a classic Seq2Seq model, that is, the input of the model is a text sequence and the output is another text sequence. In fact, Transformer was first applied to machine translation tasks.
+The machine translation task is a classic Seq2Seq task. For example, our input might be a Chinese sentence meaning "The weather is really nice today" and the output is "Today is a good day." Transformer is a classic Seq2Seq model, that is, the input of the model is a text sequence and the output is another text sequence. In fact, Transformer was first applied to machine translation tasks.
 
 For the Seq2Seq task, the general idea is to encode and then decode natural language sequences. The so-called encoding means encoding the input natural language sequence into a vector (or matrix) that can represent semantics through a hidden layer, which can be simply understood as a more complex word vector representation. Decoding means that the vector or matrix encoded in the input natural language sequence is output through the hidden layer and then decoded into the corresponding natural language target sequence. By encoding and decoding, the Seq2Seq task can be implemented.
 
@@ -356,25 +356,25 @@ Next, we will first introduce the classic structure of traditional neural networ
 
 ### 2.2.2 Feedforward neural network
 
-Feed Forward Neural Network (FFN), which is the network structure in which each layer of neurons in the upper and lower layers is fully connected to each neuron in the upper and lower layers. Each Encoder Layer includes the attention mechanism mentioned above and a feedforward neural network. The implementation of feedforward neural network is relatively simple:
+Feed Forward Neural Network (FFN), a network in which each neuron in a layer is fully connected to every neuron in the layers above and below. Each Encoder Layer includes the attention mechanism mentioned above and a feedforward neural network. The implementation of feedforward neural network is relatively simple:
 
 ```python
 class MLP(nn.Module):
-    '''前馈神经网络'''
+    '''Feedforward neural network'''
     def __init__(self, dim: int, hidden_dim: int, dropout: float):
         super().__init__()
-        # 定义第一层线性变换，从输入维度到隐藏维度
+        # First linear layer: from the input dimension to the hidden dimension
         self.w1 = nn.Linear(dim, hidden_dim, bias=False)
-        # 定义第二层线性变换，从隐藏维度到输入维度
+        # Second linear layer: from the hidden dimension back to the input dimension
         self.w2 = nn.Linear(hidden_dim, dim, bias=False)
-        # 定义dropout层，用于防止过拟合
+        # Dropout layer to prevent overfitting
         self.dropout = nn.Dropout(dropout)
 
     def forward(self, x):
-        # 前向传播函数
-        # 首先，输入x通过第一层线性变换和RELU激活函数
-        # 然后，结果乘以输入x通过第三层线性变换的结果
-        # 最后，通过第二层线性变换和dropout层
+        # Forward pass
+        # First, input x goes through the first linear layer and the ReLU activation
+        # Then, the result is multiplied by the result of passing x through a third linear layer
+        # Finally, it goes through the second linear layer and the dropout layer
         return self.dropout(self.w2(F.relu(self.w1(x))))
     
 ```
@@ -411,30 +411,30 @@ Adding this small amount of $\epsilon$ here is to avoid denominator 0.
 
 However, batch normalization has some shortcomings, such as:
 
-- When the video memory is limited and the mini-batch is small, the mean and variance of the samples taken by Batch Norm cannot reflect the global statistical distribution information, resulting in poor results;
-- For RNNs that are unfolding in the time dimension, the same distribution of different sentences is likely to be different, so the normalization of Batch Norm will lose its meaning;
+- When GPU memory is limited and the mini-batch is small, the mean and variance of the samples taken by Batch Norm cannot reflect the global statistical distribution information, resulting in poor results;
+- For RNNs that are unfolding in the time dimension, the distributions of different sentences at the same time step are likely to differ, so the normalization of Batch Norm will lose its meaning;
 - During training, Batch Norm needs to save statistics (mean and variance) for each step. During testing, due to the characteristics of variable-length sentences, sentences that may appear in the test set that are longer than the training set, so there is no training statistic for the step at the subsequent position;
 - To apply Batch Norm, each step needs to save and calculate batch statistics, which is time-consuming and labor-intensive.
 
-Therefore, layer normalization (Layer Norm) is more commonly used and more effective in deep neural networks. Compared with Batch Norm counting the mean and variance of all samples on each layer, Layer Norm calculates the mean and variance of all its layers on each sample, thus stabilizing the distribution of each sample. The normalization method of Layer Norm is actually exactly the same as that of Batch Norm, except that the dimensions of statistical statistics are different.
+Therefore, layer normalization (Layer Norm) is more commonly used and more effective in deep neural networks. Compared with Batch Norm counting the mean and variance of all samples on each layer, Layer Norm computes the mean and variance over all dimensions of each individual sample, thus stabilizing the distribution of each sample. The normalization method of Layer Norm is actually exactly the same as that of Batch Norm, except that the dimensions over which the statistics are computed are different.
 
 Based on the above normalization formula, we can simply implement a Layer Norm layer:
 
 ```python
 class LayerNorm(nn.Module):
-    ''' Layer Norm 层'''
+    ''' Layer Norm layer'''
     def __init__(self, features, eps=1e-6):
 	super(LayerNorm, self).__init__()
-    # 线性矩阵做映射
+    # Linear matrices for the mapping
 	self.a_2 = nn.Parameter(torch.ones(features))
 	self.b_2 = nn.Parameter(torch.zeros(features))
 	self.eps = eps
 	
     def forward(self, x):
-	# 在统计每个样本所有维度的值，求均值和方差
+	# Compute the mean and variance over all dimensions of each sample
 	mean = x.mean(-1, keepdim=True) # mean: [bsz, max_len, 1]
 	std = x.std(-1, keepdim=True) # std: [bsz, max_len, 1]
-    # 注意这里也在最后一个维度发生了广播
+    # Note that broadcasting also happens over the last dimension here
 	return self.a_2 * (x - mean) / (std + self.eps) + self.b_2
 ```
 Note that in the Layer Norm layer we implemented above, there are two linear matrices for mapping.
@@ -443,7 +443,7 @@ Note that in the Layer Norm layer we implemented above, there are two linear mat
 
 Since the Transformer model has a complex structure and deeper layers, in order to avoid model degradation, Transformer adopts the idea of residual connection to connect each sublayer. Residual connection, that is, the input of the next layer is not only the output of the previous layer, but also the input of the previous layer. Residual connection allows the lowest level information to be transmitted directly to the highest level, allowing the upper level to focus on the learning of residuals.
 
-For example, in Encoder, in the first sub-layer, the input enters the multi-head self-attention layer and is directly passed to the output of the layer, and the output of the layer will be added to the original input and then normalized. The same is true in the second sub-layer. Right now:
+For example, in Encoder, in the first sub-layer, the input enters the multi-head self-attention layer and is also passed directly to that layer's output, and the output of the layer will be added to the original input and then normalized. The same is true in the second sub-layer. That is:
 
 $$
 x = x + MultiHeadSelfAttention(LayerNorm(x))
@@ -456,9 +456,9 @@ $$
 In our code implementation, we implement residual connections by adding the original value to the forward calculation of the layer:
 
 ```python
-# 注意力计算
+# Attention computation
 h = x + self.attention.forward(self.attention_norm(x))
-# 经过前馈神经网络
+# Feedforward neural network
 out = h + self.feed_forward.forward(self.fnn_norm(h))
 ```
 
@@ -471,12 +471,12 @@ After implementing the above components, we can build the Transformer Encoder. E
 
 ```python
 class EncoderLayer(nn.Module):
-  '''Encoder层'''
+  '''Encoder layer'''
     def __init__(self, args):
         super().__init__()
-        # 一个 Layer 中有两个 LayerNorm，分别在 Attention 之前和 MLP 之前
+        # A layer has two LayerNorms: one before Attention and one before the MLP
         self.attention_norm = LayerNorm(args.n_embd)
-        # Encoder 不需要掩码，传入 is_causal=False
+        # The Encoder needs no mask, so pass is_causal=False
         self.attention = MultiHeadAttention(args, is_causal=False)
         self.fnn_norm = LayerNorm(args.n_embd)
         self.feed_forward = MLP(args)
@@ -484,9 +484,9 @@ class EncoderLayer(nn.Module):
     def forward(self, x):
         # Layer Norm
         norm_x = self.attention_norm(x)
-        # 自注意力
+        # Self-attention
         h = x + self.attention.forward(norm_x, norm_x, norm_x)
-        # 经过前馈神经网络
+        # Feedforward neural network
         out = h + self.feed_forward.forward(self.fnn_norm(h))
         return out
 ```
@@ -495,15 +495,15 @@ Then we build an Encoder, consisting of N Encoder Layers, and at the end we will
 
 ```python
 class Encoder(nn.Module):
-    '''Encoder 块'''
+    '''Encoder block'''
     def __init__(self, args):
         super(Encoder, self).__init__() 
-        # 一个 Encoder 由 N 个 Encoder Layer 组成
+        # An Encoder consists of N Encoder Layers
         self.layers = nn.ModuleList([EncoderLayer(args) for _ in range(args.n_layer)])
         self.norm = LayerNorm(args.n_embd)
 
     def forward(self, x):
-        "分别通过 N 层 Encoder Layer"
+        "Pass through each of the N Encoder Layers in turn"
         for layer in self.layers:
             x = layer(x)
         return self.norm(x)
@@ -513,33 +513,33 @@ The output through Encoder is the result after input encoding.
 
 ### 2.2.6 Decoder
 
-Similarly, we can build a Decoder Layer first, and then assemble N Decoder Layers into Decoders. But unlike Encoder, Decoder consists of two attention layers and a feedforward neural network. The first attention layer is a masked self-attention layer, that is, using Mask's attention calculation, ensuring that each token can only use the attention score before the token; the second attention layer is a multi-head attention layer, which uses the output of the first attention layer as query and the output of the Encoder as the key and value to calculate the attention score. Finally, through the feedforward neural network:
+Similarly, we can build a Decoder Layer first, and then assemble N Decoder Layers into Decoders. But unlike Encoder, Decoder consists of two attention layers and a feedforward neural network. The first attention layer is a masked self-attention layer, that is, using masked attention, which ensures that each token can only use the attention scores of the tokens before it; the second attention layer is a multi-head attention layer, which uses the output of the first attention layer as query and the output of the Encoder as the key and value to calculate the attention score. Finally, through the feedforward neural network:
 
 ```python
 class DecoderLayer(nn.Module):
-  '''解码层'''
+  '''Decoder layer'''
     def __init__(self, args):
         super().__init__()
-        # 一个 Layer 中有三个 LayerNorm，分别在 Mask Attention 之前、Self Attention 之前和 MLP 之前
+        # A layer has three LayerNorms: before Mask Attention, before Self Attention and before the MLP
         self.attention_norm_1 = LayerNorm(args.n_embd)
-        # Decoder 的第一个部分是 Mask Attention，传入 is_causal=True
+        # The first part of the Decoder is Mask Attention, so pass is_causal=True
         self.mask_attention = MultiHeadAttention(args, is_causal=True)
         self.attention_norm_2 = LayerNorm(args.n_embd)
-        # Decoder 的第二个部分是 类似于 Encoder 的 Attention，传入 is_causal=False
+        # The second part of the Decoder is Encoder-style attention, so pass is_causal=False
         self.attention = MultiHeadAttention(args, is_causal=False)
         self.ffn_norm = LayerNorm(args.n_embd)
-        # 第三个部分是 MLP
+        # The third part is the MLP
         self.feed_forward = MLP(args)
 
     def forward(self, x, enc_out):
         # Layer Norm
         norm_x = self.attention_norm_1(x)
-        # 掩码自注意力
+        # Masked self-attention
         x = x + self.mask_attention.forward(norm_x, norm_x, norm_x)
-        # 多头注意力
+        # Multi-head attention
         norm_x = self.attention_norm_2(x)
         h = x + self.attention.forward(norm_x, enc_out, enc_out)
-        # 经过前馈神经网络
+        # Feedforward neural network
         out = h + self.feed_forward.forward(self.ffn_norm(h))
         return out
 ```
@@ -548,10 +548,10 @@ Then, in the same way, we build a Decoder block:
 
 ```python
 class Decoder(nn.Module):
-    '''解码器'''
+    '''Decoder'''
     def __init__(self, args):
         super(Decoder, self).__init__() 
-        # 一个 Decoder 由 N 个 Decoder Layer 组成
+        # A Decoder consists of N Decoder Layers
         self.layers = nn.ModuleList([DecoderLayer(args) for _ in range(args.n_layer)])
         self.norm = LayerNorm(args.n_embd)
 
@@ -572,20 +572,20 @@ In the first two chapters, we have analyzed the Attention mechanism and the core
 
 As we said in Chapter 1, in NLP tasks, we often need to convert natural language input into vectors that the machine can process. In deep learning, the component that undertakes this task is the Embedding layer.
 
-The Embedding layer is actually an embedded vector lookup table that stores a fixed-size dictionary. In other words, before entering a neural network, we often let the natural language input pass through the word participle tokenizer. The function of the word participle is to divide the natural language input into tokens and convert it into a fixed index. For example, if we set the vocabulary size to 4 and enter "I like you", then the word participle can convert the input to:
+The Embedding layer is actually an embedded vector lookup table that stores a fixed-size dictionary. In other words, before entering a neural network, we often let the natural language input pass through a tokenizer. The function of the tokenizer is to divide the natural language input into tokens and convert it into a fixed index. For example, if we set the vocabulary size to 4 and enter "I like you", then the tokenizer can convert the input to:
 
 ```
-input: 我
+input: I
 output: 0
 
-input: 喜欢
+input: like
 output: 1
 
-input：你
+input: you
 output: 2
 ```
 
-Of course, in reality, the work of tokenizer will be more complicated than this. For example, there are many different ways to divide word into words, into subwords, into characters, etc., and the size of the word list is often as high as tens of thousands or hundreds of thousands. We will not elaborate on the details of tokenizer here. We will introduce in detail how tokenizers of large models run and train them later.
+Of course, in reality, the work of tokenizer will be more complicated than this. For example, there are many different ways to split text into words, subwords, characters, etc., and the vocabulary size is often as high as tens of thousands or hundreds of thousands. We will not elaborate on the details of tokenizer here. We will introduce in detail how tokenizers for large language models (LLMs) work and are trained later.
 
 Therefore, the input of the Embedding layer is often a matrix of shape (batch_size, seq_len, 1). The first dimension is the number of batches at a time, the second dimension is the length of the natural language sequence, and the third dimension is the index value converted by tokens through tokenizer. For example, for the above input, the input to the Embedding layer would be:
 
@@ -607,7 +607,7 @@ self.tok_embeddings = nn.Embedding(args.vocab_size, args.dim)
 
 Attention mechanisms can achieve good parallel computing, but at the same time, their attention calculation method also leads to the loss of relative positions in the sequence. In RNN and LSTM, the input sequence will be processed recursively in sequence along the order of the statement itself, so the order of the input sequence provides extremely important information, which is very consistent with the characteristics of natural language itself.
 
-However, from the above analysis of the attention mechanism, we can find that in the calculation process of the attention mechanism, for each token in the sequence, the other positions are equal to it, that is, "I like you" and "You like me" seem to be exactly the same in the attention mechanism, but this is undoubtedly a huge problem with the attention mechanism. Therefore, in order to use sequence sequence information and retain relative position information in the sequence, Transformer adopts a position encoding mechanism, which has been used by various models later.
+However, from the above analysis of the attention mechanism, we can find that in the calculation process of the attention mechanism, for each token in the sequence, the other positions are equal to it, that is, "I like you" and "You like me" seem to be exactly the same in the attention mechanism, but this is undoubtedly a huge problem with the attention mechanism. Therefore, in order to use sequence order information and retain relative position information in the sequence, Transformer adopts a position encoding mechanism, which has been used by various models later.
 
 ​Position encoding, that is, encode the token according to the relative position of the sequence, and then add the position encoding to the word vector encoding. There are many ways to encode the position. Transformer uses the sine cosine function to encode the position (absolute position encoding Sinusoidal), and the encoding method is:
 
@@ -630,7 +630,7 @@ $$
 \rm x_{PE} = \begin{bmatrix} 0.1 & 0.2 & 0.3 & 0.4 \\ 0.2 & 0.3 & 0.4 & 0.5 \\ 0.3 & 0.4 & 0.5 & 0.6 \\ 0.4 & 0.5 & 0.6 & 0.7 \end{bmatrix} + \begin{bmatrix} \sin(\frac{0}{10000^0}) & \cos(\frac{0}{10000^0}) & \sin(\frac{0}{10000^{2/4}}) & \cos(\frac{0}{10000^{2/4}}) \\ \sin(\frac{1}{10000^0}) & \cos(\frac{1}{10000^0}) & \sin(\frac{1}{10000^{2/4}}) & \cos(\frac{1}{10000^{2/4}}) \\ \sin(\frac{2}{10000^0}) & \cos(\frac{2}{10000^0}) & \sin(\frac{2}{10000^{2/4}}) & \cos(\frac{2}{10000^{2/4}}) \\ \sin(\frac{3}{10000^0}) & \cos(\frac{3}{10000^0}) & \sin(\frac{3}{10000^{2/4}}) & \cos(\frac{3}{10000^{2/4}}) \end{bmatrix} = \begin{bmatrix} 0.1 & 1.2 & 0.3 & 1.4 \\ 1.041 & 0.84 & 0.41 & 1.49 \\ 1.209 & -0.016 & 0.52 & 1.59 \\ 0.541 & -0.489 & 0.895 & 1.655 \end{bmatrix}
 $$
 
-We can use the following code to get the location encoding of the above example:
+We can use the following code to get the position encoding of the above example:
 ```python
 import numpy as np
 import matplotlib.pyplot as plt
@@ -683,7 +683,7 @@ $$
 p_m^THp_n = g(m-n)
 $$
 
-We assume that $H$ is a matrix of units, then:
+We assume that $H$ is an identity matrix, then:
 
 $$
 p_m^THp_n = p_m^Tp_n = \langle\boldsymbol{p}_m, \boldsymbol{p}_n\rangle = g(m-n)
@@ -695,7 +695,7 @@ $$
 \begin{equation}\langle\boldsymbol{p}_m, \boldsymbol{p}_n\rangle = \text{Re}[\boldsymbol{p}_m \boldsymbol{p}_n^*]\end{equation}
 $$
 
-Then assume that there is a plural $q_{m-n}$ so that:
+Then assume that there is a complex number $q_{m-n}$ so that:
 
 $$
 \begin{equation}\boldsymbol{p}_m \boldsymbol{p}_n^* = \boldsymbol{q}_{m-n}\end{equation}
@@ -713,15 +713,15 @@ $$
 \begin{equation}\boldsymbol{p}_m = \begin{pmatrix}e^{\text{i}m\theta_0} \\ e^{\text{i}m\theta_1} \\ \vdots \\ e^{\text{i}m\theta_{d/2-1}}\end{pmatrix}\quad\Leftrightarrow\quad \boldsymbol{p}_m=\begin{pmatrix}\cos m\theta_0 \\ \sin m\theta_0 \\ \cos m\theta_1 \\ \sin m\theta_1 \\ \vdots \\ \cos m\theta_{d/2-1} \\ \sin m\theta_{d/2-1}  \end{pmatrix}\end{equation}
 $$
 
-Then take $\theta_i = 10000^{-2i/d}$ (this form can make the trend towards zero as |m−n| increases, ⟨pm,pn have a tendency toward zero. This can be proved by integrating the position encoding, and taking base as 10000 is the experimental result), the above encoding method is obtained.
+Then take $\theta_i = 10000^{-2i/d}$ (with this form, ⟨p_m, p_n⟩ tends toward zero as |m−n| increases, which can be shown by approximating the sum with an integral; the base of 10000 was chosen experimentally), the above encoding method is obtained.
 
-When $H$ is not an unit matrix, because the correlation between any two dimensions of the d-dimensional vector formed by the Embedding layer of the model is relatively small, which satisfies a certain degree of decoupling. We can regard it as a diagonal matrix, so use the above encoding:
+When $H$ is not an identity matrix, because the correlation between any two dimensions of the d-dimensional vector formed by the Embedding layer of the model is relatively small, which satisfies a certain degree of decoupling. We can regard it as a diagonal matrix, so use the above encoding:
 
 $$
 \begin{equation}\boldsymbol{p}_m^{\top} \boldsymbol{\mathcal{H}} \boldsymbol{p}_n=\sum_{i=1}^{d/2} \boldsymbol{\mathcal{H}}_{2i,2i} \cos m\theta_i \cos n\theta_i + \boldsymbol{\mathcal{H}}_{2i+1,2i+1} \sin m\theta_i \sin n\theta_i\end{equation}
 $$
 
-By integrating and deteriorating:
+Applying the product-to-sum identities gives:
 
 $$
 \begin{equation}\sum_{i=1}^{d/2} \frac{1}{2}\left(\boldsymbol{\mathcal{H}}_{2i,2i} + \boldsymbol{\mathcal{H}}_{2i+1,2i+1}\right) \cos (m-n)\theta_i + \frac{1}{2}\left(\boldsymbol{\mathcal{H}}_{2i,2i} - \boldsymbol{\mathcal{H}}_{2i+1,2i+1}\right) \cos (m+n)\theta_i \end{equation}
@@ -742,28 +742,28 @@ Based on the above principle, we implement a position encoding layer:
 ```python
 
 class PositionalEncoding(nn.Module):
-    '''位置编码模块'''
+    '''Positional encoding module'''
 
     def __init__(self, args):
         super(PositionalEncoding, self).__init__()
-        # Dropout 层
+        # Dropout layer
         self.dropout = nn.Dropout(p=args.dropout)
 
-        # block size 是序列的最大长度
+        # block size is the maximum sequence length
         pe = torch.zeros(args.block_size, args.n_embd)
         position = torch.arange(0, args.block_size).unsqueeze(1)
-        # 计算 theta
+        # Compute theta
         div_term = torch.exp(
             torch.arange(0, args.n_embd, 2) * -(math.log(10000.0) / args.n_embd)
         )
-        # 分别计算 sin、cos 结果
+        # Compute the sin and cos terms
         pe[:, 0::2] = torch.sin(position * div_term)
         pe[:, 1::2] = torch.cos(position * div_term)
         pe = pe.unsqueeze(0)
         self.register_buffer("pe", pe)
 
     def forward(self, x):
-        # 将位置编码加到 Embedding 结果上
+        # Add the positional encoding to the embedding output
         x = x + self.pe[:, : x.size(1)].requires_grad_(False)
         return self.dropout(x)
 ```
@@ -785,10 +785,10 @@ Based on the components implemented previously, we implement the complete Transf
 
 ```python
 class Transformer(nn.Module):
-   '''整体模型'''
+   '''Full model'''
     def __init__(self, args):
         super().__init__()
-        # 必须输入词表大小和 block size
+        # vocab size and block size are required
         assert args.vocab_size is not None
         assert args.block_size is not None
         self.args = args
@@ -799,27 +799,27 @@ class Transformer(nn.Module):
             encoder = Encoder(args),
             decoder = Decoder(args),
         ))
-        # 最后的线性层，输入是 n_embd，输出是词表大小
+        # Final linear layer: input n_embd, output vocab size
         self.lm_head = nn.Linear(args.n_embd, args.vocab_size, bias=False)
 
-        # 初始化所有的权重
+        # Initialize all weights
         self.apply(self._init_weights)
 
-        # 查看所有参数的数量
+        # Report the total number of parameters
         print("number of parameters: %.2fM" % (self.get_num_params()/1e6,))
 
-    '''统计所有参数的数量'''
+    '''Count all parameters'''
     def get_num_params(self, non_embedding=False):
-        # non_embedding: 是否统计 embedding 的参数
+        # non_embedding: whether to exclude the embedding parameters from the count
         n_params = sum(p.numel() for p in self.parameters())
-        # 如果不统计 embedding 的参数，就减去
+        # If embedding parameters are not counted, subtract them
         if non_embedding:
             n_params -= self.transformer.wpe.weight.numel()
         return n_params
 
-    '''初始化权重'''
+    '''Initialize weights'''
     def _init_weights(self, module):
-        # 线性层和 Embedding 层初始化为正则分布
+        # Initialize linear and embedding layers from a normal distribution
         if isinstance(module, nn.Linear):
             torch.nn.init.normal_(module.weight, mean=0.0, std=0.02)
             if module.bias is not None:
@@ -827,40 +827,40 @@ class Transformer(nn.Module):
         elif isinstance(module, nn.Embedding):
             torch.nn.init.normal_(module.weight, mean=0.0, std=0.02)
     
-    '''前向计算函数'''
+    '''Forward computation'''
     def forward(self, idx, targets=None):
-        # 输入为 idx，维度为 (batch size, sequence length, 1)；targets 为目标序列，用于计算 loss
+        # Input idx has shape (batch size, sequence length, 1); targets is the target sequence used to compute the loss
         device = idx.device
         b, t = idx.size()
-        assert t <= self.args.block_size, f"不能计算该序列，该序列长度为 {t}, 最大序列长度只有 {self.args.block_size}"
+        assert t <= self.args.block_size, f"Cannot process this sequence: its length is {t}, but the maximum sequence length is only {self.args.block_size}"
 
-        # 通过 self.transformer
-        # 首先将输入 idx 通过 Embedding 层，得到维度为 (batch size, sequence length, n_embd)
+        # Pass through self.transformer
+        # First pass idx through the Embedding layer to get shape (batch size, sequence length, n_embd)
         print("idx",idx.size())
-        # 通过 Embedding 层
+        # Embedding layer
         tok_emb = self.transformer.wte(idx)
         print("tok_emb",tok_emb.size())
-        # 然后通过位置编码
+        # Then apply positional encoding
         pos_emb = self.transformer.wpe(tok_emb) 
-        # 再进行 Dropout
+        # Then apply dropout
         x = self.transformer.drop(pos_emb)
-        # 然后通过 Encoder
+        # Then pass through the Encoder
         print("x after wpe:",x.size())
         enc_out = self.transformer.encoder(x)
         print("enc_out:",enc_out.size())
-        # 再通过 Decoder
+        # Then pass through the Decoder
         x = self.transformer.decoder(x, enc_out)
         print("x after decoder:",x.size())
 
         if targets is not None:
-            # 训练阶段，如果我们给了 targets，就计算 loss
-            # 先通过最后的 Linear 层，得到维度为 (batch size, sequence length, vocab size)
+            # Training: if targets are given, compute the loss
+            # First pass through the final Linear layer to get shape (batch size, sequence length, vocab size)
             logits = self.lm_head(x)
-            # 再跟 targets 计算交叉熵
+            # Then compute cross-entropy against targets
             loss = F.cross_entropy(logits.view(-1, logits.size(-1)), targets.view(-1), ignore_index=-1)
         else:
-            # 推理阶段，我们只需要 logits，loss 为 None
-            # 取 -1 是只取序列中的最后一个作为输出
+            # Inference: we only need the logits, and loss is None
+            # Index -1 takes only the last position in the sequence as output
             logits = self.lm_head(x[:, [-1], :]) # note: using list [-1] to preserve the time dim
             loss = None
 
@@ -869,13 +869,13 @@ class Transformer(nn.Module):
 
 Note that in addition to building the entire Transformer structure, the above code also implements three additional functions:
 
-- get_num_params: The amount of parameters used to statistics the model
+- get_num_params: counts the number of model parameters
 - _init_weights: used to randomly initialize all parameters of the model
 - forward: forward calculation function
 
 In addition, in the forward calculation function, we use pytorch's cross entropy function to calculate the loss for the model. For different loss functions, readers can consult the official documentation of Pytorch, and I will not repeat it here.
 
-After the above steps, we can "hand rub" a complete, computable Transformer model from zero. Due to the fact that this book focuses on LLM, in this chapter, we will no longer talk about how to train the Transformer model in detail; in the following text, we will similarly "hand rub" a LLaMA model from scratch and lead everyone to train their own Tiny LLaMA step by step.
+After the above steps, we can build a complete, working Transformer model by hand from scratch. Due to the fact that this book focuses on LLM, in this chapter, we will no longer talk about how to train the Transformer model in detail; in the following text, we will similarly build a LLaMA model by hand from scratch and lead everyone to train their own Tiny LLaMA step by step.
 
 **References**
 
