@@ -18,12 +18,12 @@
         window.$docsify = {
             name: 'Happy-LLM',
             repo: 'https://github.com/datawhalechina/happy-llm',
-            loadSidebar: true,
+            loadSidebar: '_Sidebar_EN.md',
             auto2top: true,
             subMaxLevel: 2,
-            relativePath: false,  // 启用相对路径支持
+            relativePath: false,  // relative path support
             alias: {
-                '/.*/_sidebar_en.md': '/_sidebar_en.md'
+                '/.*/_Sidebar_EN.md': '/_Sidebar_EN.md'
             },
             pagination: {
                 previousText: 'Previous Chapter',
@@ -50,7 +50,7 @@
     <script src="https://cdn.jsdelivr.net/npm/marked@3"></script>
     <!-- CDN files for docsify-katex -->
     <script src="//cdn.jsdelivr.net/npm/docsify-katex@latest/dist/docsify-katex.js"></script>
-    <!-- 字数统计 -->
+    <!-- word count -->
     <script src="//unpkg.com/docsify-count/dist/countable.js"></script>
 </body>
 
